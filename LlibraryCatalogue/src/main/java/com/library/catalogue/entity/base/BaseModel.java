@@ -15,12 +15,10 @@ import java.io.Serializable;
 @Data
 @MappedSuperclass
 @JsonIgnoreProperties(ignoreUnknown = true)
-@EqualsAndHashCode
 @AllArgsConstructor
 @NoArgsConstructor
 public class BaseModel implements Serializable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String uid;
 }
