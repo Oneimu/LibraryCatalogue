@@ -6,10 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
+import javax.persistence.*;
 import java.io.Serializable;
 
 @Data
@@ -20,5 +17,33 @@ import java.io.Serializable;
 public class BaseModel implements Serializable {
 
     @Id
+    @Column(updatable = false, nullable = false)
     private String uid;
+
+    private String state;
+
+    private String county;
+
+    private String schoolNames;
+
+    private String alternateNames;
+
+    @Column(length = 3000)
+    private String description;
+
+    private String title;
+
+    private String schoolCardId;
+
+    private String photoId;
+
+    private String appl;
+
+    private String originalDate;
+
+
+
+
+
+
 }

@@ -3,7 +3,7 @@ package com.library.catalogue.enums;
 public enum FileType {
 
         SCHOOLBUILDING("School Building"),
-        HOSPITAL("Hospital"),
+        SCHOOLFUND("School buildings; budget"),
         FINANCIALINSTITUTION("Financial Institution"),
         PLACEHOLDER1("PLACEHOLDER1"),
         PLACEHOLDER2("PLACEHOLDER2"),

@@ -13,8 +13,8 @@ public class DataSourceConfig {
     public DataSource dataSource(){
         return DataSourceBuilder.create()
                 .driverClassName("com.mysql.cj.jdbc.Driver")
-                .url("jdbc:mysql://localhost:3306/rosenwald")
-                .username("root")
+                .url("jdbc:mysql://localhost:3306/rosendb")
+                .username("luckydb")
                 .password("Dragonfly500")
                 .build();
     }
