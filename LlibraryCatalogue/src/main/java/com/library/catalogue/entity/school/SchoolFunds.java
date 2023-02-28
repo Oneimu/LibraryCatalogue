@@ -5,10 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.library.catalogue.entity.base.BaseModel;
 import lombok.Data;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
+import java.util.Set;
 
 @Entity
 @Data
@@ -34,5 +32,8 @@ public class SchoolFunds extends BaseModel {
 
     private String rosenwaldContribution;
 
+    @OneToMany(targetEntity = SchoolBuildings.class,cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name ="image_uids",referencedColumnName = "uid")
+    private Set<SchoolBuildings> schoolBuildings;
 
 }
