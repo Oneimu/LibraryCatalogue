@@ -41,9 +41,4 @@ public class BaseModel implements Serializable {
 
     private String originalDate;
 
-
-
-
-
-
 }

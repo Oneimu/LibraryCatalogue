@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -79,5 +80,10 @@ public class SchoolBuildingsService {
             deleteSchoolBuilding(uid);
         }
     }
+
+    public List<SchoolBuildings> getSchoolBuildingsByListProperties(String State, String county, String name){
+        return schoolBuildingsRepository.findSchoolBuildingByStateLikeIgnoreCaseAndCountyLikeIgnoreCaseAndSchoolNamesLikeIgnoreCase(State, county, name);
+    }
+
 
 }

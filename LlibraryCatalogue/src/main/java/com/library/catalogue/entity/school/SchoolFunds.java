@@ -6,6 +6,7 @@ import com.library.catalogue.entity.base.BaseModel;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -22,9 +23,9 @@ public class SchoolFunds extends BaseModel {
 
     private String budgetYear;
 
-    private String  totalCost;
+    private String totalCost;
 
-    private String negroesContribution;
+    private String blacksContribution;
 
     private String whitesContribution;
 
@@ -34,6 +35,6 @@ public class SchoolFunds extends BaseModel {
 
     @OneToMany(targetEntity = SchoolBuildings.class,cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name ="image_uids",referencedColumnName = "uid")
-    private Set<SchoolBuildings> schoolBuildings;
+    private List<SchoolBuildings> schoolBuildings;
 
 }

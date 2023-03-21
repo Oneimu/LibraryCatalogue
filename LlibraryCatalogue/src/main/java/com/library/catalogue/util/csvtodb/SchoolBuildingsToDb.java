@@ -13,7 +13,6 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Service
-@Getter
 public class SchoolBuildingsToDb {
     private final String SCHOOL_BUILDING_URL = "https://raw.githubusercontent.com/Aayush000/Rosenwald_Library/main/schools/school_metadata.csv";
 

@@ -3,7 +3,6 @@ package com.library.catalogue.controller;
 import com.library.catalogue.entity.school.SchoolBuildings;
 import com.library.catalogue.service.school.SchoolBuildingsService;
 import com.library.catalogue.util.RestConstants;
-import com.library.catalogue.util.csvtodb.SchoolBuildingsToDb;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
