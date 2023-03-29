@@ -7,6 +7,7 @@ import com.library.catalogue.service.school.SchoolBuildingsService;
 import com.library.catalogue.util.ReadUrl;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.csv.CSVRecord;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -20,7 +21,8 @@ public class SchoolFundsToDb {
     private ReadUrl readUrl = new ReadUrl();
 
 
-    private SchoolBuildingsService schoolBuildingsService;
+    @Autowired
+    private final SchoolBuildingsService schoolBuildingsService;
 
 
     public List<SchoolFunds> schoolFundsCvsToDb() {
@@ -57,7 +59,9 @@ public class SchoolFundsToDb {
 //            schoolFundsDto.setPhotoId();
 
             // the list of school buildings that align
-            schoolFundsDto.setSchoolBuildings(schoolBuildingsService.getSchoolBuildingsByListProperties(schoolFundsDto.getState(), schoolFundsDto.getCounty(), schoolFundsDto.getSchoolNames()));
+            schoolFundsDto.setSchoolBuildings(
+                    schoolBuildingsService.getSchoolBuildingsByListProperties(schoolFundsDto.getState(),
+                            schoolFundsDto.getCounty(), schoolFundsDto.getSchoolNames()));
 
             allSchoolFunds.add(schoolFundsDto.toEntity());
 
