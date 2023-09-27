@@ -12,6 +12,8 @@ import java.net.http.HttpResponse;
 
 public class ReadUrl {
 
+    // todo: modify code to also read xlsx (xcell format) file
+
     public Iterable<CSVRecord> readURL(String URL) {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(URL)).build();

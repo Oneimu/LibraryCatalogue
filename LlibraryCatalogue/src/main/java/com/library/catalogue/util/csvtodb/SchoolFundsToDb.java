@@ -27,6 +27,11 @@ public class SchoolFundsToDb {
 
     public List<SchoolFunds> schoolFundsCvsToDb() {
 
+        return schoolFundsCvsToDbUrl(SCHOOL_FUNDS_URL);
+    }
+
+    public List<SchoolFunds> schoolFundsCvsToDbUrl(String csvUrl) {
+
         List<SchoolFunds> allSchoolFunds = new ArrayList<>();
 
         Iterable<CSVRecord> records = readUrl.readURL(SCHOOL_FUNDS_URL);
@@ -56,7 +61,7 @@ public class SchoolFundsToDb {
             schoolFundsDto.setWhitesContribution(record.get("Whites Contribution"));
             schoolFundsDto.setPublicContribution(record.get("Public Contribution"));
             schoolFundsDto.setRosenwaldContribution(record.get("Rosenwald Contribution"));
-//            schoolFundsDto.setPhotoId();
+            // schoolFundsDto.setPhotoId();
 
             // the list of school buildings that align
             schoolFundsDto.setSchoolBuildings(
@@ -68,4 +73,5 @@ public class SchoolFundsToDb {
         }
         return allSchoolFunds;
     }
+
 }

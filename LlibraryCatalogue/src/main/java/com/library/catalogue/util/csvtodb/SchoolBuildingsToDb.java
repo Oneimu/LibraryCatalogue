@@ -19,10 +19,13 @@ public class SchoolBuildingsToDb {
     private ReadUrl readUrl = new ReadUrl();
 
     public List<SchoolBuildings> schoolBuildingCvsToDb() {
+        return schoolBuildingCvsToDbUrl(SCHOOL_BUILDING_URL);
+        }
 
+    public List<SchoolBuildings> schoolBuildingCvsToDbUrl(String csvUrl) {
         List<SchoolBuildings> allSchoolBuildings = new ArrayList<>();
 
-        Iterable<CSVRecord> records = readUrl.readURL(SCHOOL_BUILDING_URL);
+        Iterable<CSVRecord> records = readUrl.readURL(csvUrl);
 
         SchoolBuildingsDto schoolBuildingsDto;
 
@@ -43,8 +46,7 @@ public class SchoolBuildingsToDb {
             schoolBuildingsDto.setState(record.get("State"));
 
             allSchoolBuildings.add(schoolBuildingsDto.toEntity());
-
-        }
-        return allSchoolBuildings;
     }
+    return allSchoolBuildings;
+}
 }
