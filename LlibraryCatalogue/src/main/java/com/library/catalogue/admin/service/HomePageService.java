@@ -2,19 +2,24 @@ package com.library.catalogue.admin.service;
 
 import com.library.catalogue.admin.entity.UploadDataLog;
 import com.library.catalogue.admin.enums.FileCategory;
+import com.library.catalogue.service.school.SchoolBuildingsService;
+import com.library.catalogue.service.school.SchoolFundsService;
 import com.library.catalogue.util.csvtodb.SchoolBuildingsToDb;
 import com.library.catalogue.util.csvtodb.SchoolFundsToDb;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.UUID;
@@ -23,20 +28,36 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 @Service
 @RequiredArgsConstructor
 public class HomePageService {
 
+    /**
+     * TODO:
+     * 1.
+     * retrieve all photos and csv from the unzip folder and transfer it to a folder (photos)
+     * delete all the unzip folder and the un-wanted directory.
+     *
+     * 2.
+     * find a way to retrieve content of the csv file and save it to a directory
+     */
+
+    // todo: move all links and constant string to properites
     private final SchoolBuildingsToDb schoolBuildingsToDb;
     private final SchoolFundsToDb schoolFundsToDb;
 
-    Logger logger = LoggerFactory.getLogger(LogRecord.class);
+    private final SchoolBuildingsService schoolBuildingsService;
 
-    // temporary save images to a folder in my mac
-    // todo: move all links and constant string to properites
-    String IMAGES_DIRECTORY = "/Users/luckyabolorunke/Desktop/LibraryCatalogueWebsite/";
+    private final SchoolFundsService schoolFundsService;
 
+    private Logger logger = LoggerFactory.getLogger(LogRecord.class);
+    private final String IMAGES_DIRECTORY = "/Users/luckyabolorunke/Desktop/LibraryCatalogueWebsite/";
+
+    private String zipName = "";
+
+    // modify this method to return a string (string containing message)
     public void extractZipFile(MultipartFile file, FileCategory fileCategory) throws IOException {
 
         /** save file to temp */
@@ -49,17 +70,16 @@ public class HomePageService {
         String destination = directory(fileCategory);
         try {
             ZipFile zipFile = new ZipFile(zip);
+            extractZipFile(file, destination);
             // check the zip contains at least an image and a metadata.
             if (checkZipContent(zipFile)){
-                // retrieve zip file pass the zip url to
-                saveAllCsvToDb(getCsvFromZip(zipFile));
-
-                // extract all the following to destination
-
-                zipFile.extractAll(destination);
+//                // retrieve zip file pass the zip url to
+                saveAllCsvToDb(file, fileCategory);
+//
+//                // extract all the following to destination
+                extractZipFile(file, destination);
+//
             }
-
-
 
         } catch (ZipException e) {
             e.printStackTrace();
@@ -70,35 +90,91 @@ public class HomePageService {
 
     }
 
-    // todo: read through and understand
-    public static void extractAll(String zipFilePath, String destinationDirectory) throws IOException {
-        try (ZipFile zipFile = new ZipFile(zipFilePath)) {
-            File destDir = new File(destinationDirectory);
-            if (!destDir.exists()) {
-                destDir.mkdirs();
-            }
+    public void extractZipFile(MultipartFile file, String destinationAddress) throws IOException {
 
-            Enumeration<? extends ZipEntry> entries = zipFile.entries();
-            while (entries.hasMoreElements()) {
-                ZipEntry entry = entries.nextElement();
-                String entryName = entry.getName();
-                File entryFile = new File(destinationDirectory, entryName);
+        File zip = File.createTempFile(UUID.randomUUID().toString(), "temp");
+        FileOutputStream o = new FileOutputStream(zip);
+        IOUtils.copy(file.getInputStream(), o);
+        o.close();
+        ZipFile zipFile = new ZipFile(zip);
 
-                if (entry.isDirectory()) {
-                    entryFile.mkdirs();
-                } else {
-                    try (InputStream is = zipFile.getInputStream(entry);
-                         FileOutputStream fos = new FileOutputStream(entryFile)) {
-                        byte[] buffer = new byte[1024];
-                        int bytesRead;
-                        while ((bytesRead = is.read(buffer)) != -1) {
-                            fos.write(buffer, 0, bytesRead);
-                        }
+        try (ZipInputStream zipInputStream = new ZipInputStream(file.getInputStream())) {
+            ZipEntry zipEntry;
+
+            while ((zipEntry = zipInputStream.getNextEntry()) != null) {
+
+                String entryName = zipEntry.getName();
+
+                try {
+                if (!entryName.startsWith("__MACOSX/")) {
+                    Path destinationPath = Path.of(destinationAddress, entryName);
+
+                    if (zipEntry.isDirectory()) {
+                        Files.createDirectories(destinationPath);
+                    } else {
+                        Files.createDirectories(destinationPath.getParent());
+                        Files.copy(zipInputStream, destinationPath);
                     }
+                }
+            }catch (FileAlreadyExistsException e){
+                    logger.warn(e+"");
                 }
             }
         }
+
+        /** Retrieve all the files from the unziped folder and put it in the target folder */
+        String zipFileName = file.getOriginalFilename().substring(0, file.getOriginalFilename().length()-4);
+        transferFiles(destinationAddress+zipFileName, destinationAddress);
     }
+
+    static void transferFiles(String sourceDir, String targetDir){
+        try {
+            // Create Path objects for source and destination directories
+            Path sourceDirectory = Paths.get(sourceDir);
+            Path destinationDirectory = Paths.get(targetDir);
+
+            // Use Files.move to move the contents of the source directory to the destination directory
+            Files.walk(sourceDirectory, FileVisitOption.FOLLOW_LINKS)
+                    .forEach(source -> {
+                        Path destination = destinationDirectory.resolve(sourceDirectory.relativize(source));
+                        try {
+                            Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING);
+                        } catch (IOException e) {
+//                            e.printStackTrace();
+                        }
+                    });
+
+            // Delete the source directory after moving its contents
+            Files.delete(sourceDirectory);
+
+            System.out.println("Contents moved from " + sourceDir + " to " + targetDir);
+            System.out.println("Source directory deleted.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void saveAllCsvToDb(MultipartFile zipFile, FileCategory fileCategory) {
+
+        try (InputStream zipInputStream = zipFile.getInputStream();
+             ZipInputStream zis = new ZipInputStream(zipInputStream)) {
+            ZipEntry entry;
+
+            while ((entry = zis.getNextEntry()) != null) {
+                if (!entry.isDirectory() && entry.getName().endsWith(".csv")) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(zis));
+                    CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withHeader());
+
+                    saveCsvToDb(csvParser, fileCategory);
+
+                    csvParser.close();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     private boolean checkZipContent(ZipFile zipFile){
 
@@ -117,45 +193,46 @@ public class HomePageService {
         if (!imagePresent && !metadataPresent){
             logger.error("Both image and metadata files are missing in th zip file!!!");
         }else if (!imagePresent) {
-            logger.error("Both image and metadata files are missing in th zip file!!!");
+            logger.error("No Image found in zip!!!");
         }else if (!metadataPresent) {
-            logger.error("Both image and metadata files are missing in th zip file!!!");
+            logger.error("CSV not found in zip!!");
         }
 
         return imagePresent && metadataPresent;
     }
 
-    private List<String> getCsvFromZip(ZipFile zipFile){
-        return zipFile.stream()
-                .map(ZipEntry::getName)
-                .filter(name -> name.endsWith(".csv")||
-                        name.endsWith(".xlsx"))
-                .collect(Collectors.toList());
-    }
-
-    private int saveAllCsvToDb(List<String> csvFiles){
-        for (String csv: csvFiles){
-            // todo: if it does not work, pass Iterable<CSVRecord> instead of a csv name
-
+    void test(String fileName) throws IOException {
+        FileReader fileReader = null;
+        try {
+            fileReader = new FileReader(fileName);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
         }
-        // todo: change return value
-        return 0;
+        CSVFormat csvFileFormat = CSVFormat.DEFAULT.withQuote(null);
+        CSVParser csvFileParser = new CSVParser(fileReader, csvFileFormat);
+
+        List<CSVRecord> csvRecords = csvFileParser.getRecords();
+
+        for (CSVRecord csvRecord : csvRecords) {
+            System.out.println(csvRecord);
+        }
+        csvFileParser.close();
     }
 
-    /** save the csv info into the specific table */
+    /** todo: return a count of the number of records saved */
     // check csvfile format is correct
-    private int saveCsvToDb(String csvFile, FileCategory fileCategory){
+    private int saveCsvToDb(CSVParser csvParser, FileCategory fileCategory){
         switch (fileCategory) {
             case SCHOOLBUILDING:
-                return schoolBuildingsToDb.schoolBuildingCvsToDbUrl(csvFile).size();
+                schoolBuildingsService.saveAllSchoolBuildings(schoolBuildingsToDb.schoolBuildingCvsToDb(csvParser));
             case SCHOOLFUND:
-                return schoolFundsToDb.schoolFundsCvsToDbUrl(csvFile).size();
+                schoolFundsService.saveAllSchoolFunds(schoolFundsToDb.schoolFundsCvsToDb(csvParser));
         }
         return 0;
     }
 
     private String directory(FileCategory fileCategory){
-        return IMAGES_DIRECTORY + fileCategory.name();
+        return IMAGES_DIRECTORY + fileCategory.name()+"/";
     }
 
     // todo: complete this
@@ -163,5 +240,37 @@ public class HomePageService {
         return null;
     }
 
+
+    // todo: read through and understand
+//    public void extractAll(String zipFilePath, String destinationDirectory) throws IOException {
+//        try (ZipFile zipFile = new ZipFile(zipFilePath)) {
+//
+//            /** */
+//            File destDir = new File(destinationDirectory);
+//            if (!destDir.exists()) {
+//                destDir.mkdirs();
+//            }
+//
+//            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+//            while (entries.hasMoreElements()) {
+//                ZipEntry entry = entries.nextElement();
+//                String entryName = entry.getName();
+//                File entryFile = new File(destinationDirectory, entryName);
+//
+//                if (entry.isDirectory()) {
+//                    entryFile.mkdirs();
+//                } else {
+//                    try (InputStream is = zipFile.getInputStream(entry);
+//                         FileOutputStream fos = new FileOutputStream(entryFile)) {
+//                        byte[] buffer = new byte[1024];
+//                        int bytesRead;
+//                        while ((bytesRead = is.read(buffer)) != -1) {
+//                            fos.write(buffer, 0, bytesRead);
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
 
 }
